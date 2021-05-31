@@ -1,0 +1,85 @@
+# This program is to compute F1 and F2 for each frame, with frame_length of 45ms and frame shift of 30ms.
+# LIU YUANYUAN, TUT, 2020-04-23.
+# To apply on different speech tasks "vowel, sent, spon"
+# LIU YUANYUAN, TUT, 2020-05-22.
+# LIU YUANYUAN, TUT, 2021-03-23.
+
+#include files_list
+# task$ = "PDSTU_read"
+# task$ = "PC-GITA_read"
+# task$ = "TORGO_52"
+task$ = "user"
+filepath_source$ = "/home/yuanyuan/Documents/VAI_data_2020/"
+
+form Give the directory for audios and exp data
+    comment Give values to filepath_source and task.
+    comment Tested audios (.wav) should be put in folder of filepath_source$/data/task$
+    comment Output file would be put in folder of filepath_source$/exp/task$
+    comment Give value to filepath_source.
+    text filepath_source /home/yuanyuan/Documents/VAI_data_2020/
+    comment Give value to task.
+    text task user
+endform
+
+#beginPause: "Hi"
+#    comment: "comment Give value to filepath_source."
+#    text: "filepath_source", "give value to filepath_source"
+#    comment: "Give value to task."
+#    text: "task", "give value to task"
+#clicked = endPause: "Continue", "Next", "Proceed", 2
+
+am_use$ = "ipa"
+win_length_time = 0.045
+if am_use$ == "ipa"
+    hop_length_time = 0.030
+endif
+
+
+directory_data$ = filepath_source$ + "data/" + task$ + "/"
+directory_exp$ = filepath_source$ + "exp/" + task$ + "/"
+writeInfoLine: directory_data$
+strings = Create Strings as file list: "list_wav", directory_data$ + "*" + ".wav"
+selectObject: "Strings list_wav"
+n_wav = Get number of strings
+
+writeInfoLine: "speaker", ",  ", "frame", ",  ", "F1", ",  ", "F2"
+for j from 1 to n_wav
+    selectObject: "Strings list_wav"
+    wav_name$ = Get string: j
+    Read from file: directory_data$ + wav_name$
+    sound = selected("Sound")
+    name$ = selected$("Sound")
+    if (task$ == "PDSTU_read" or task$ == "PC-GITA_read")
+        a = index (name$, "_")
+        speaker$ = left$ (name$, a-1)
+    else
+        speaker$ = name$
+    endif
+
+#	appendInfoLine: name$, ", ", speaker$
+#	writeInfoLine: "speaker: ", speaker$
+    dur = Get total duration
+    sr = Get sampling frequency
+    sn = Get number of samples
+    formants = To Formant (burg): 0, 5, 5500, 0.045, 50
+
+    win_length = floor(win_length_time * sr)
+    hop_length = floor(hop_length_time * sr)
+    # frame number in the wav
+    fn = 1 + floor((sn - win_length)/hop_length)
+
+    for i to fn
+        t1 = (i-1)*hop_length_time
+        t2 = t1 + win_length_time
+        selectObject: formants
+        f1 = Get mean: 1, t1, t2, "Hertz"
+        f2 = Get mean: 2, t1, t2, "Hertz"
+        appendInfoLine: speaker$, ",  ", fixed$ (i, 0), ",  ", fixed$ (f1, 2), ",  ", fixed$ (f2, 2)
+    endfor
+    selectObject: sound
+    Remove
+    selectObject: formants
+    Remove
+endfor
+deleteFile: directory_exp$ + "frame_formants_" + am_use$ + ".txt"
+appendFile: directory_exp$ + "frame_formants_" + am_use$ + ".txt", info$()

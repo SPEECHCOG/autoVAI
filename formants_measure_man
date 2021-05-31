@@ -1,0 +1,117 @@
+# This program is to compute mean formants (F1 and F2) for each annotated vowel segment in VAI dataset provided by Tiina and Nelly.
+# Method 2: First, the formant contour is computed for the whole audio file, getting a formant list.
+# Then from the list, we compute the mean values for F1 and F2 in each interested vowel segment.
+# LIU YUANYUAN, TUT, 2020-3-25.
+# LIU YUANYUAN, TUT, 2020-4-27.
+# This is only for PDSTU_read data.
+
+#include files_list
+
+#include files_list
+#task$ = "PDSTU_read"
+# task$ = "PC-GITA_read"
+# task$ = "TORGO_52"
+task$ = "user"
+filepath_source$ = "/home/yuanyuan/Documents/VAI_data_2020/"
+form Give the directory for audios and exp data
+    comment Give values to filepath_source and task.
+    comment Tested audios (.wav) should be put in folder of filepath_source$/data/task$
+    comment Output file would be put in folder of filepath_source$/exp/task$
+    comment Give value to filepath_source.
+    text filepath_source /home/yuanyuan/Documents/VAI_data_2020/
+    comment Give value to task.
+    text task user
+endform
+
+#beginPause: "Hi"
+#    comment: "comment Give value to filepath_source."
+#    text: "filepath_source", "give value to filepath_source"
+#    comment: "Give value to task."
+#    text: "task", "give value to task"
+#clicked = endPause: "Continue", "Next", "Proceed", 2
+
+
+directory_data$ = filepath_source$ + "data/" + task$ + "/"
+directory_exp$ = filepath_source$ + "exp/" + task$ + "/"
+
+
+strings = Create Strings as file list: "list_wav", directory_data$ + "/*.wav"
+selectObject: "Strings list_wav"
+n_wav = Get number of strings
+
+writeInfoLine: "speaker, vowel, t0(ms), t1(ms), F1(Hz), F2(Hz)"
+for j from 1 to n_wav
+    selectObject: "Strings list_wav"
+    wav_name$ = Get string: j
+    name$ = wav_name$ - ".wav"
+    if task$ == "PDSTU_read"
+        a = index (name$, '_')
+	speaker$ = left$ (name$, a-1)
+    elsif task$ == "user"
+        speaker$ = name$
+    endif
+    
+    Read from file: directory_data$ + "/" + wav_name$
+    sound = selected("Sound")
+    formants = To Formant (burg): 0, 5, 5500, 0.045, 50
+    Read from file: directory_data$ + "/" + name$ + ".TextGrid"
+
+    text = selected("TextGrid")
+    selectObject: sound
+    plusObject: text
+
+    sound = selected("Sound")
+    text = selected("TextGrid")
+    selectObject: text
+    n = Get number of intervals: 1
+
+    na = 0
+    ni = 0
+    nu = 0
+    for i to n
+        selectObject: text
+        tekst$ = Get label of interval: 1, i
+        if tekst$ = "a" or tekst$ = "aa"
+            t1 = Get starting point: 1, i
+            t2 = Get end point: 1, i
+            selectObject: formants
+            f1 = Get mean: 1, t1, t2, "Hertz"
+            f2 = Get mean: 2, t1, t2, "Hertz"
+            na = na+1
+            f1_a[na] = f1
+            f2_a[na] = f2
+            appendInfoLine: speaker$, ",", "a", ",", fixed$ (t1*1000,0), ",", fixed$ (t2*1000,0), ",", fixed$ (f1, 2), ",", fixed$ (f2, 2)
+        elsif  tekst$ = "i" or tekst$ = "ii"
+            t1 = Get starting point: 1, i
+            t2 = Get end point: 1, i
+            selectObject: formants
+            f1 = Get mean: 1, t1, t2, "Hertz"
+            f2 = Get mean: 2, t1, t2, "Hertz"
+            ni = ni+1
+            f1_i[ni] = f1
+            f2_i[ni] = f2
+            appendInfoLine: speaker$, ",", "i", ",", fixed$ (t1*1000,0), ",", fixed$ (t2*1000,0), ",", fixed$ (f1, 2), ",", fixed$ (f2, 2)
+        elsif  tekst$ = "u" or tekst$ = "uu"
+            t1 = Get starting point: 1, i
+            t2 = Get end point: 1, i
+            selectObject: formants
+            f1 = Get mean: 1, t1, t2, "Hertz"
+            f2 = Get mean: 2, t1, t2, "Hertz"
+            nu = nu+1
+            f1_u[nu] = f1
+            f2_u[nu] = f2
+
+            appendInfoLine: speaker$, ",", "u", ",", fixed$ (t1*1000,0), ",", fixed$ (t2*1000,0), ",", fixed$ (f1, 2), ",", fixed$ (f2, 2)
+
+        endif
+    endfor
+    selectObject: sound
+    Remove
+    selectObject: formants
+    Remove
+    selectObject: text
+    Remove
+
+endfor
+deleteFile: directory_exp$ + "/vowel_formants_man.txt"
+appendFile: directory_exp$ + "/vowel_formants_man.txt", info$()
