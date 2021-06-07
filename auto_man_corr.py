@@ -1,5 +1,5 @@
 # This program is to investigate the correlation between formants parameters generated automatically and manually.
-# Input files: speaker_formants_stat_auto.txt, speaker_formants_stat_man.txt, participants_info.xlsx
+# Input files: speaker_formants_stat_auto.txt, speaker_formants_stat_man.txt.
 # LIU YUANYUAN, TUT, 2020-4-29.
 
 import os
