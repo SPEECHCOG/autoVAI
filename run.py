@@ -122,6 +122,7 @@ for step in range(num_steps):
         t_start = t.tic()
         auto_man_corr(filepath_source, task, am, set_a)
         t_end = t.toc()
+    # step 6 is for 'PDSTU_read', 'PC-GITA_read' and 'TORGO_52'.
     if step == 6:
         print('step-6: correlation between vowel articulation features and subjective (expert) assessment...')
         if task == 'PDSTU_read':
@@ -130,6 +131,7 @@ for step in range(num_steps):
             vowel_articulation_expert_rating_corr_PCGITA(filepath_source, task)
         if task == 'TORGO_52':
             vowel_articulation_expert_rating_corr_TORGO(filepath_source, task)
+    # step 7 and step 8 are for task = 'PDSTU_read'.
     if step == 7:
         print('step-7, formant errors detection for selected candidate frames...')
         t_start = t.tic()
